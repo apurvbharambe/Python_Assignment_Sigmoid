@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect
+from flask import Flask, render_template, request, redirect, flash
 import boto3
 from botocore.exceptions import ClientError
 
@@ -20,15 +20,24 @@ s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    # return render_template('index.html')
+     error_message = request.args.get('error_message')
+     return render_template('index.html', error_message=error_message)
 
 
 @app.route('/create_bucket', methods=['POST'])
 def create_bucket():
     bucket_name = request.form['bucket_name']
     region = AWS_DEFAULT_REGION  # Specify your desired region here
-    s3.create_bucket(Bucket=bucket_name,
-                     CreateBucketConfiguration={'LocationConstraint': region})
+    # s3.create_bucket(Bucket=bucket_name,
+    #                  CreateBucketConfiguration={'LocationConstraint': region})
+    # return redirect('/')
+    try:
+        s3.create_bucket(Bucket=bucket_name,
+                         CreateBucketConfiguration={'LocationConstraint': region})
+    except ClientError as e:
+        error_message = f"Error creating bucket: {e}"
+        return redirect(f'/?error_message={error_message}')
     return redirect('/')
 
 '''
@@ -50,13 +59,16 @@ def delete_bucket():
             for obj in response['Contents']:
                 s3.delete_object(Bucket=bucket_name, Key=obj['Key'])
     except ClientError as e:
-        print(f"Error: {e}")
+        # print(f"Error: {e}")
+        error_message = f"Error creating bucket: {e}"
+        return redirect(f'/?error_message={error_message}')
     
     # Delete the bucket itself
     try:
         s3.delete_bucket(Bucket=bucket_name)
     except ClientError as e:
-        print(f"Error: {e}")
+        error_message = f"Error creating bucket: {e}"
+        return redirect(f'/?error_message={error_message}')
     
     return redirect('/')
 
@@ -69,9 +81,11 @@ def create_folder():
     try:
         s3.put_object(Bucket=bucket_name, Key=(folder_name + '/'))
     except Exception as e:
-        print(f"Error creating folder: {e}")
+        # print(f"Error creating folder: {e}")
         # Handle the error as needed, e.g., render an error page
-        return redirect('/')
+        error_message = f"Error creating bucket: {e}"
+        return redirect(f'/?error_message={error_message}')
+        # return redirect('/')
     
     return redirect('/')
 
@@ -84,9 +98,11 @@ def delete_folder():
     try:
         s3.delete_object(Bucket=bucket_name, Key=(folder_name + '/'))
     except Exception as e:
-        print(f"Error deleting folder: {e}")
-        # Handle the error as needed, e.g., render an error page
-        return redirect('/')
+        # print(f"Error deleting folder: {e}")
+        # # Handle the error as needed, e.g., render an error page
+        # return redirect('/')
+        error_message = f"Error creating bucket: {e}"
+        return redirect(f'/?error_message={error_message}')
     
     return redirect('/')
 
@@ -101,9 +117,11 @@ def delete_object():
         # Delete the object from the bucket
         s3.delete_object(Bucket=bucket_name, Key=object_key)
     except Exception as e:
-        print(f"Error deleting object: {e}")
-        # Handle the error as needed, e.g., render an error page
-        return redirect('/')
+        # print(f"Error deleting object: {e}")
+        # # Handle the error as needed, e.g., render an error page
+        # return redirect('/')
+        error_message = f"Error creating bucket: {e}"
+        return redirect(f'/?error_message={error_message}')
     
     return redirect('/')
 
@@ -122,9 +140,11 @@ def move_file():
         # Delete the file from the source bucket
         s3.delete_object(Bucket=source_bucket, Key=file_name)
     except Exception as e:
-        print(f"Error moving object: {e}")
-        # Handle the error as needed, e.g., render an error page
-        return redirect('/')
+        # print(f"Error moving object: {e}")
+        # # Handle the error as needed, e.g., render an error page
+        # return redirect('/')
+        error_message = f"Error creating bucket: {e}"
+        return redirect(f'/?error_message={error_message}')
     
     return redirect('/')
 '''
@@ -150,8 +170,10 @@ def list_s3():
             for obj in response['Contents']:
                 contents.append(obj['Key'])
     except ClientError as e:
-        print(f"Error listing objects: {e}")
-        # Handle the error as needed, e.g., render an error page
+        # print(f"Error listing objects: {e}")
+        # # Handle the error as needed, e.g., render an error page
+        error_message = f"Error creating bucket: {e}"
+        return redirect(f'/?error_message={error_message}')
     
     return render_template('list_s3.html', contents=contents, bucket_name=bucket_name)
 
